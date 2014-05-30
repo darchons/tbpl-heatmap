@@ -71,23 +71,18 @@ function process_pushes(pushes) {
         builds.forEach(function(build) {
           var builder = build.buildername.replace(repo, '').replace('  ', ' ');
 
-          if (!build.notes.some(function(note) {
+          build.notes.forEach(function(note) {
             // A rev in the note means the changeset was backed out.
             var backouts = note.note.trim().match(rev_regexp);
-            if (backouts) {
-              backouts.forEach(function(backout) {
-                backout = backout.substr(0, 12);
-                results[backout] = results[backout] || {};
-                results[backout][builder] = 1;
-              });
-              return true;
+            if (!backouts) {
+              return;
             }
-            return false;
-
-          }) && build.result.trim().toLowerCase() === 'success') {
-            results[rev] = results[rev] || {};
-            results[rev][builder] = 0;
-          }
+            backouts.forEach(function(backout) {
+              backout = backout.substr(0, 12);
+              results[backout] = results[backout] || {};
+              results[backout][builder] = 1;
+            });
+          });
         });
 
         // Delay 10s before the next network request.
