@@ -15,6 +15,7 @@ var request = require('request');
 var remote = process.argv[2].replace(/\/?$/, '');
 var repo = /\/([^\/]+)$/.exec(remote)[1];
 var pushlog_url = remote + '/json-pushes';
+var info_url = remote + '/json-info';
 var builds_url = 'http://tbpl.mozilla.org/php/getRevisionBuilds.php';
 var start = process.argv[3];
 var end = process.argv[4];
@@ -104,6 +105,7 @@ do_request({
   json: true
 
 }).then(function(pushes) {
+
   var all_pushes = Object.keys(pushes).filter(function(id) {
     // Only count changesets corresponding to actual bugs.
     var push = pushes[id];
@@ -129,6 +131,39 @@ do_request({
   });
 
 }).spread(function(csets, results) {
+
+  // Get info about csets we've not seen before.
+  return Object.keys(results).filter(function(cset) {
+    return !(cset in csets);
+
+  }).map(function(unknown_cset) {
+    return function() {
+      return do_request({
+        url: info_url,
+        qs: {
+          node: unknown_cset
+        },
+        json: true
+
+      }).then(function(info) {
+        csets[unknown_cset] = {
+          changesets: Object.keys(info).map(function(cset) {
+            return info[cset];
+          })
+        };
+
+        // Delay 1s before the next network request.
+        return q.delay(1000);
+      });
+    };
+
+  // Fetch unknown csets sequentially.
+  }).reduce(q.when, q()).then(function() {
+    return [csets, results];
+  });
+
+}).spread(function(csets, results) {
+
   var output = Object.keys(results).filter(function(cset) {
     if (cset in csets) {
       return true;
