@@ -186,6 +186,9 @@ do_request({
 
         // Delay 1s before the next network request.
         return q.delay(1000);
+      }).fail(function(error) {
+        console.log("Error getting unknwon cset " +
+                    unknown_cset + ", " + error);
       });
     };
 
