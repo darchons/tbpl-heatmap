@@ -117,8 +117,8 @@ function process_pushes(pushes) {
           });
         });
 
-        // Delay 10s before the next network request.
-        return q.delay(10000);
+        // Delay 1s before the next network request.
+        return q.delay(1000);
       });
     };
 
@@ -147,7 +147,8 @@ do_request({
   });
 
   var requests = [];
-  var chunk = Math.ceil(all_pushes.length / 10);
+  // Use 5 concurrent requests.
+  var chunk = Math.ceil(all_pushes.length / 5);
   for (var i = 0; i < all_pushes.length; i += chunk) {
     requests.push(process_pushes(all_pushes.slice(i, i + chunk)));
   }
