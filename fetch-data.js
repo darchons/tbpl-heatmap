@@ -70,7 +70,38 @@ function process_pushes(pushes) {
 
       }).then(function(builds) {
         builds.forEach(function(build) {
-          var builder = build.buildername.replace(repo, '').replace('  ', ' ');
+          var builder = build.buildername.replace(repo, '');
+
+          if (builder.indexOf('_dep') >= 0 ||
+              builder.indexOf(' dep') >= 0 ||
+              builder.indexOf(' periodic') >= 0 ||
+              builder.indexOf(' spidermonkey') >= 0 ||
+              builder.indexOf(' talos') >= 0 ||
+              builder.indexOf(' valgrind') >= 0) {
+            return;
+          }
+
+          if (builder.indexOf(' build') >= 0) {
+            builder = 'build';
+
+          } else {
+            builder = [
+              / test/, /-?opt/, /-?debug/,
+              / pgo/, / asan/, / non-unified/, / leak/,
+              / static/, / analysis/, /-?e10s/,
+              / x86/, / x64/, / x86-64/, / 32-bit/, / 64-bit/,
+              / vm/, / emulator/, / \d+(\.\d+)+/, / ubuntu64/,
+              /^rev\d/, / Snow Leopard/, / Mountain Lion/,
+              / xp/, / 7/,
+              / tegra/, / armv6/, / panda/, / on/, / ix/,
+              /^Windows/, /^WINNT/, /^Ubuntu/,
+              /^Android/, /^MacOSX/, /^b2g/,
+            ].reduce(function(builder, term) {
+              return builder.replace(
+                new RegExp('\\b' + term.source + '\\b', 'ig'), ''
+              ).replace(/[_\s]+/g, ' ');
+            }, builder).trim();
+          }
 
           build.notes.forEach(function(note) {
             // A rev in the note means the changeset was backed out.
