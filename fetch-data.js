@@ -46,7 +46,7 @@ function aggregateFiles(push) {
   var files = {};
   push.changesets.forEach(function(cset) {
     cset.files.forEach(function(file) {
-      files[file.slice(0, file.lastIndexOf('/') + 1)] |= 1;
+      files[file.split('/').slice(0, -1).slice(0, 1).join('/')] |= 1;
     });
   });
   return files;
